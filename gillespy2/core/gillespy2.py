@@ -365,8 +365,6 @@ class Model(object):
                     object.
                 """
 
-        # TODO, make sure that you cannot overwrite an existing reaction
-        # param_type = type(reactions).__name__
         if isinstance(rate_rules, list):
             for rr in rate_rules:
                 self.add_rate_rule(rr)
