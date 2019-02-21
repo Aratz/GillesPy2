@@ -81,9 +81,28 @@ def convert(filename, model_name=None, gillespy_model=None):
         parameter = model.getParameter(i)
         name = parameter.getId()
         value = parameter.getValue()
+        is_species = False
+        rule = None
 
-        gillespy_parameter = gillespy2.Parameter(name=name, expression=value)
-        gillespy_model.add_parameter([gillespy_parameter])
+        for i in range(model.getNumRules()):
+            rule = model.getRule(i)
+            rule_name = rule.getId()
+            if name == rule_name:
+                is_species = True
+                break
+
+        if is_species:
+            gillespy_species = gillespy2.Species(name=name, initial_value=value, continuous=True)
+            gillespy_model.add_species([gillespy_species])
+            '''
+            gillespy_rate_rule = gillespy2.RateRule(gillespy_model.listOfSpecies[name], 
+                    libsbml.formulaToString(rule.getMath()))
+            gillespy_model.add_rate_rule([gillespy_rate_rule])
+            #   print(gillespy_rate_rule)
+            '''
+        else:
+            gillespy_parameter = gillespy2.Parameter(name=name, expression=value)
+            gillespy_model.add_parameter([gillespy_parameter])
 
     for i in range(model.getNumCompartments()):
         compartment = model.getCompartment(i)
@@ -147,6 +166,7 @@ def convert(filename, model_name=None, gillespy_model=None):
 
     for i in range(model.getNumRules()):
         rule = model.getRule(i)
+        #   print(rule.getId())
 
         t = []
 
@@ -169,8 +189,9 @@ def convert(filename, model_name=None, gillespy_model=None):
         else:
             msg = "Rule"
 
-        errors.append(["{0} '{1}' found on line '{2}' with equation '{3}'. gillespy does not support SBML Rules".format(
-            msg, rule.getId(), rule.getLine(), libsbml.formulaToString(rule.getMath())), -5])
+        gillespy_rate_rule = gillespy2.RateRule(rule.getId(), 
+                    libsbml.formulaToString(rule.getMath()))
+        gillespy_model.add_rate_rule([gillespy_rate_rule])
 
     for i in range(model.getNumCompartments()):
         compartment = model.getCompartment(i)
@@ -206,7 +227,6 @@ def convert(filename, model_name=None, gillespy_model=None):
                           "Function '{0}' found on line '{1}' with equation '{2}'. gillespy does not support SBML "
                           "Function Definitions".format(
                               function.getId(), function.getLine(), libsbml.formulaToString(function.getMath())), -5])
-
     return gillespy_model, errors
 
 
